@@ -97,13 +97,25 @@ jobs:
           KUBE_CA_B64: ${{ secrets.KUBE_CA_B64 }}
           KUBE_TOKEN: ${{ secrets.KUBE_TOKEN }}
         run: |
-          echo "$KUBE_CA_B64" | base64 -d > "$RUNNER_TEMP/ca.crt"
+          # Strip stray spaces/newlines that sneak in when pasting secrets
+          KUBE_SERVER="$(printf '%s' "$KUBE_SERVER" | tr -d '[:space:]')"
+          KUBE_TOKEN="$(printf '%s' "$KUBE_TOKEN" | tr -d '[:space:]')"
+          case "$KUBE_SERVER" in
+            https://*:*) ;;
+            *) echo "::error::KUBE_SERVER must look like https://<node-ip>:6443 (scheme and port included, not a Rancher URL or a bare hostname)"; exit 1 ;;
+          esac
+          printf '%s' "$KUBE_CA_B64" | tr -d '[:space:]' | base64 -d > "$RUNNER_TEMP/ca.crt"
           kubectl config set-cluster target --server="$KUBE_SERVER" \
             --certificate-authority="$RUNNER_TEMP/ca.crt" --embed-certs=true
           kubectl config set-credentials deployer --token="$KUBE_TOKEN"
           kubectl config set-context target --cluster=target --user=deployer --namespace=adandez-pass-gen
           kubectl config use-context target
           chmod 600 "$HOME/.kube/config"
+
+      - name: Check cluster access
+        run: |
+          kubectl version
+          kubectl auth can-i patch deployments -n adandez-pass-gen
 
       - name: Point the manifests at the new image
         env:
@@ -114,13 +126,15 @@ jobs:
           grep -A3 '^images:' k8s/app/kustomization.yaml
 
       - name: Apply manifests
+        id: apply
         run: kubectl apply -k k8s/app
 
       - name: Wait for rollout
         run: kubectl rollout status deployment/adandez-pass-gen --timeout=180s
 
       - name: Roll back on failure
-        if: failure()
+        # Only when the manifests were applied but the new pods never became healthy
+        if: failure() && steps.apply.outcome == 'success'
         run: |
           kubectl rollout undo deployment/adandez-pass-gen
           kubectl rollout status deployment/adandez-pass-gen --timeout=180s
