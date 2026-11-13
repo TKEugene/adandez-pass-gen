@@ -1,0 +1,21 @@
+# OPTIONAL and not applied by CI. Only traffic from your ingress controller can reach the pods.
+# Edit the namespace label to match where YOUR ingress controller runs, then:
+#   kubectl apply -f k8s/optional/networkpolicy.yaml
+# Requires a CNI that enforces NetworkPolicy (Calico, Cilium, etc.).
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-ingress-controller-only
+  namespace: adandez-pass-gen
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: adandez-pass-gen
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ingress-nginx
+      ports:
+        - port: 8080

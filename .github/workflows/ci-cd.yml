@@ -1,0 +1,126 @@
+name: CI/CD
+
+on:
+  push:
+    branches: [main]
+    paths-ignore: ["**.md"]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-cd-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/adandez-pass-gen
+
+jobs:
+  build:
+    name: Build, test, push image
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.vars.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Compute image tag
+        id: vars
+        run: echo "tag=sha-${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/setup-buildx-action@v4
+
+      # Pull requests (including forks, which have no secrets) stop after this build + test.
+      - name: Build image (local, for testing)
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          load: true
+          push: false
+          tags: adandez-pass-gen:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Smoke test the container
+        run: |
+          # Same restrictions the Kubernetes pod runs with
+          docker run -d --name smoke -p 8080:8080 \
+            --read-only --tmpfs /tmp --cap-drop ALL --security-opt no-new-privileges \
+            adandez-pass-gen:ci
+          for i in $(seq 1 20); do curl -fsS http://localhost:8080/healthz >/dev/null && break; sleep 1; done
+
+          curl -fsS http://localhost:8080/healthz
+          curl -fsS -o /dev/null http://localhost:8080/random-pass-gen/
+          curl -fsS http://localhost:8080/random-pass-gen/app.js | grep -q getRandomValues
+          curl -fsSI http://localhost:8080/random-pass-gen/ | grep -qi '^content-security-policy:'
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://localhost:8080/random-pass-gen)" = 301
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://localhost:8080/random-pass-gen/missing)" = 404
+          docker rm -f smoke
+
+      - name: Log in to Docker Hub
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v4
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Push image
+        if: github.event_name != 'pull_request'
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          push: true
+          # sha-xxxxxxx is what gets deployed (immutable, easy to roll back to). latest is for convenience only.
+          tags: |
+            ${{ env.IMAGE }}:${{ steps.vars.outputs.tag }}
+            ${{ env.IMAGE }}:latest
+          cache-from: type=gha
+
+  deploy:
+    name: Deploy to Kubernetes
+    needs: build
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: production
+    concurrency:
+      group: deploy-production
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Configure kubectl
+        env:
+          KUBE_SERVER: ${{ secrets.KUBE_SERVER }}
+          KUBE_CA_B64: ${{ secrets.KUBE_CA_B64 }}
+          KUBE_TOKEN: ${{ secrets.KUBE_TOKEN }}
+        run: |
+          echo "$KUBE_CA_B64" | base64 -d > "$RUNNER_TEMP/ca.crt"
+          kubectl config set-cluster target --server="$KUBE_SERVER" \
+            --certificate-authority="$RUNNER_TEMP/ca.crt" --embed-certs=true
+          kubectl config set-credentials deployer --token="$KUBE_TOKEN"
+          kubectl config set-context target --cluster=target --user=deployer --namespace=adandez-pass-gen
+          kubectl config use-context target
+          chmod 600 "$HOME/.kube/config"
+
+      - name: Point the manifests at the new image
+        env:
+          NEW_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/adandez-pass-gen
+          NEW_TAG: ${{ needs.build.outputs.tag }}
+        run: |
+          sed -i "s|newName: .*|newName: ${NEW_IMAGE}|; s|newTag: .*|newTag: ${NEW_TAG}|" k8s/app/kustomization.yaml
+          grep -A3 '^images:' k8s/app/kustomization.yaml
+
+      - name: Apply manifests
+        run: kubectl apply -k k8s/app
+
+      - name: Wait for rollout
+        run: kubectl rollout status deployment/adandez-pass-gen --timeout=180s
+
+      - name: Roll back on failure
+        if: failure()
+        run: |
+          kubectl rollout undo deployment/adandez-pass-gen
+          kubectl rollout status deployment/adandez-pass-gen --timeout=180s

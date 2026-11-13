@@ -1,0 +1,9 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: adandez-pass-gen
+spec:
+  minAvailable: 1       # node drains/upgrades can never take down both pods at once
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: adandez-pass-gen

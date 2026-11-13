@@ -1,0 +1,39 @@
+# Serves https://adandez.com/random-pass-gen and https://www.adandez.com/random-pass-gen
+# next to your existing WordPress ("/"), "/kb" and "/ssl" ingresses. ingress-nginx picks the
+# longest matching path, so "/random-pass-gen" wins over WordPress's "/".
+#
+# There is deliberately NO `tls:` block. The certificate for adandez.com / www.adandez.com
+# (secret "adandez-tls" in the "adandez" namespace) is already served through the existing
+# ingresses, and ingress-nginx uses it for every ingress on the same host.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: adandez-pass-gen
+  labels:
+    app.kubernetes.io/name: adandez-pass-gen
+  annotations:
+    # This ingress has no tls block of its own, so force the HTTP -> HTTPS redirect explicitly.
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: adandez.com
+      http:
+        paths:
+          - path: /random-pass-gen
+            pathType: Prefix
+            backend:
+              service:
+                name: adandez-pass-gen
+                port:
+                  name: http
+    - host: www.adandez.com
+      http:
+        paths:
+          - path: /random-pass-gen
+            pathType: Prefix
+            backend:
+              service:
+                name: adandez-pass-gen
+                port:
+                  name: http

@@ -1,0 +1,57 @@
+# Applied ONCE by a cluster admin. Gives GitHub Actions the minimum permissions it needs
+# to roll out this app in this namespace only (no secrets, no delete, no other namespaces).
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: github-deployer
+  namespace: adandez-pass-gen
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: github-deployer
+  namespace: adandez-pass-gen
+rules:
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    verbs: ["get", "list", "watch", "create", "patch", "update"]
+  - apiGroups: ["apps"]
+    resources: ["replicasets"]          # needed by `kubectl rollout status/undo`
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["services"]
+    verbs: ["get", "list", "watch", "create", "patch", "update"]
+  - apiGroups: [""]
+    resources: ["pods"]                 # read-only, for rollout progress and debugging
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["networking.k8s.io"]
+    resources: ["ingresses"]
+    verbs: ["get", "list", "watch", "create", "patch", "update"]
+  - apiGroups: ["policy"]
+    resources: ["poddisruptionbudgets"]
+    verbs: ["get", "list", "watch", "create", "patch", "update"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: github-deployer
+  namespace: adandez-pass-gen
+subjects:
+  - kind: ServiceAccount
+    name: github-deployer
+    namespace: adandez-pass-gen
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: github-deployer
+---
+# Kubernetes 1.24+ no longer creates ServiceAccount tokens automatically.
+# This Secret asks the cluster to mint a token for the account above.
+apiVersion: v1
+kind: Secret
+metadata:
+  name: github-deployer-token
+  namespace: adandez-pass-gen
+  annotations:
+    kubernetes.io/service-account.name: github-deployer
+type: kubernetes.io/service-account-token

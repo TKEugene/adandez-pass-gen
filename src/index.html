@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self'; script-src 'self'; img-src 'self' data:; connect-src 'none'; form-action 'none'; base-uri 'none'">
+<meta name="referrer" content="no-referrer">
+<title>Free Random Password Generator | Adandez</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <a class="logo" href="/" aria-label="Adandez home">
+    <img src="logo.svg" alt="Adandez">
+  </a>
+</header>
+
+<main>
+  <h1>Free Random Password Generator</h1>
+  <p class="sub">Need a secure password idea? Generate a unique, strong password for free. It is created in your browser and never sent or saved anywhere.</p>
+
+  <div class="layout">
+    <svg class="castle" viewBox="0 0 240 240" role="img" aria-label="Castle illustration">
+      <circle cx="120" cy="120" r="108" fill="#dbe8fb"/>
+      <ellipse cx="60" cy="170" rx="38" ry="52" fill="#8cc63f"/><ellipse cx="186" cy="176" rx="34" ry="44" fill="#b6e85a"/>
+      <rect x="50" y="102" width="140" height="10" rx="2" fill="#e9edf0" stroke="#3c4a57" stroke-width="2"/>
+      <rect x="56" y="112" width="128" height="104" fill="#e3e7ea" stroke="#3c4a57" stroke-width="2"/>
+      <rect x="92" y="70" width="56" height="34" fill="#e9edf0" stroke="#3c4a57" stroke-width="2"/>
+      <rect x="112" y="80" width="16" height="22" fill="#3c4a57"/>
+      <path d="M120 70V44" stroke="#3c4a57" stroke-width="2"/><path d="M120 44l22 7-22 7z" fill="#ff7a6b" stroke="#3c4a57" stroke-width="1.5"/>
+      <path d="M102 216v-40a18 18 0 0 1 36 0v40z" fill="#3c4a57"/>
+      <path d="M200 40l5 12 12 5-12 5-5 12-5-12-12-5 12-5z" fill="#f7b500"/>
+    </svg>
+
+    <section aria-label="Password generator">
+      <div class="out">
+        <div class="field">
+          <input id="pw" type="text" readonly aria-label="Generated password" autocomplete="off" spellcheck="false">
+          <span class="badge" id="badge">Very strong</span>
+          <button class="icon" id="shuffle" type="button" aria-label="Generate a new password" title="Generate new password">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg>
+          </button>
+        </div>
+        <button class="copy" id="copy" type="button">Copy</button>
+      </div>
+      <div class="meter" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+      <div class="info" id="info" aria-live="polite"></div>
+
+      <div class="row">
+        <span class="l">Password length: <b id="lenv">16</b></span>
+        <div class="len">
+          <button class="step" id="minus" type="button" aria-label="Decrease length">&minus;</button>
+          <input id="len" type="range" min="8" max="64" value="16" aria-label="Password length">
+          <button class="step" id="plus" type="button" aria-label="Increase length">+</button>
+        </div>
+      </div>
+
+      <div class="row">
+        <span class="l">Characters used:</span>
+        <div class="checks" id="sets">
+          <label><input type="checkbox" data-set="upper" checked> ABC</label>
+          <label><input type="checkbox" data-set="lower" checked> abc</label>
+          <label><input type="checkbox" data-set="digit" checked> 123</label>
+          <label><input type="checkbox" data-set="sym"> #$&amp;</label>
+        </div>
+      </div>
+      <label class="extra"><input type="checkbox" id="amb"> Avoid look-alike characters (I, l, 1, O, 0)</label>
+    </section>
+  </div>
+
+  <div class="privacy"><strong>Private by design.</strong> Passwords are generated on your device with your browser's cryptographic random number generator. Nothing is stored, logged, or transmitted, and a new password is created each time you press the refresh button. Clearing the page erases it.</div>
+</main>
+<div class="toast" id="toast" role="status"></div>
+
+<script src="app.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: adandez-pass-gen
+  labels:
+    app.kubernetes.io/name: adandez-pass-gen
+    # Kubernetes enforces the strictest built-in pod security profile in this namespace.
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/enforce-version: latest
