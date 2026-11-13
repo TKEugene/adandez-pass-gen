@@ -4,15 +4,29 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self'; script-src 'self'; img-src 'self' data:; connect-src 'none'; form-action 'none'; base-uri 'none'">
-<meta name="referrer" content="no-referrer">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<meta name="description" content="Free random password generator. Create strong, unique passwords in your browser. Nothing is stored or sent.">
+<meta name="theme-color" content="#fff6e6">
 <title>Free Random Password Generator | Adandez</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<header>
-  <a class="logo" href="/" aria-label="Adandez home">
-    <img src="logo.svg" alt="Adandez">
-  </a>
+<header class="site-header">
+  <div class="bar">
+    <a class="logo" href="/" aria-label="Adandez home">
+      <img src="logo.svg" alt="Adandez">
+    </a>
+    <button class="menu-btn" id="menu-btn" type="button" aria-expanded="false" aria-controls="site-nav" aria-label="Menu"><span></span><span></span><span></span></button>
+    <nav class="nav" id="site-nav" aria-label="Adandez services">
+      <a href="https://share.adandez.com" target="_blank" rel="noopener">Secure Share</a>
+      <a href="https://tke.co.ke" target="_blank" rel="noopener">Get IT Services</a>
+      <a href="https://futbolbench.co.ke" target="_blank" rel="noopener">Football News</a>
+      <a href="https://anywhere.co.ke" target="_blank" rel="noopener">Adventure Insights</a>
+      <a href="https://tailsandtreats.co.ke" target="_blank" rel="noopener">Get pet food</a>
+      <a href="https://billing.adandez.com/" target="_blank" rel="noopener">Get a domain and hosting</a>
+      <a href="https://beadwork.co.ke" target="_blank" rel="noopener">Get beadwork</a>
+    </nav>
+  </div>
 </header>
 
 <main>
@@ -20,17 +34,38 @@
   <p class="sub">Need a secure password idea? Generate a unique, strong password for free. It is created in your browser and never sent or saved anywhere.</p>
 
   <div class="layout">
-    <svg class="castle" viewBox="0 0 240 240" role="img" aria-label="Castle illustration">
-      <circle cx="120" cy="120" r="108" fill="#dbe8fb"/>
-      <ellipse cx="60" cy="170" rx="38" ry="52" fill="#8cc63f"/><ellipse cx="186" cy="176" rx="34" ry="44" fill="#b6e85a"/>
-      <rect x="50" y="102" width="140" height="10" rx="2" fill="#e9edf0" stroke="#3c4a57" stroke-width="2"/>
-      <rect x="56" y="112" width="128" height="104" fill="#e3e7ea" stroke="#3c4a57" stroke-width="2"/>
-      <rect x="92" y="70" width="56" height="34" fill="#e9edf0" stroke="#3c4a57" stroke-width="2"/>
-      <rect x="112" y="80" width="16" height="22" fill="#3c4a57"/>
-      <path d="M120 70V44" stroke="#3c4a57" stroke-width="2"/><path d="M120 44l22 7-22 7z" fill="#ff7a6b" stroke="#3c4a57" stroke-width="1.5"/>
-      <path d="M102 216v-40a18 18 0 0 1 36 0v40z" fill="#3c4a57"/>
-      <path d="M200 40l5 12 12 5-12 5-5 12-5-12-12-5 12-5z" fill="#f7b500"/>
-    </svg>
+    <div class="hero-wrap">
+      <svg class="elephant" id="elephant" viewBox="0 0 360 360" role="img" aria-label="A cute elephant wearing a golden crown">
+        <ellipse class="shadow" cx="180" cy="338" rx="96" ry="12"/>
+        <g class="hop"><g class="float">
+          <path class="spark s1" d="M52 96l4 11 11 4-11 4-4 11-4-11-11-4 11-4z"/>
+          <path class="spark s2" d="M314 70l3 9 9 3-9 3-3 9-3-9-9-3 9-3z"/>
+          <path class="spark s3" d="M324 236l3 8 8 3-8 3-3 8-3-8-8-3 8-3z"/>
+          <ellipse class="skin-dark" cx="180" cy="308" rx="98" ry="46"/>
+          <g class="ear ear-l"><circle class="skin" cx="84" cy="184" r="66"/><circle class="pink" cx="92" cy="186" r="43"/></g>
+          <g class="ear ear-r"><circle class="skin" cx="276" cy="184" r="66"/><circle class="pink" cx="268" cy="186" r="43"/></g>
+          <circle class="skin" cx="180" cy="182" r="92"/>
+          <ellipse class="shine" cx="138" cy="130" rx="26" ry="13" transform="rotate(-28 138 130)"/>
+          <path class="tusk" d="M142 236c-15 14-13 38 7 44-7-14-6-28 6-38z"/>
+          <path class="tusk" d="M218 236c15 14 13 38-7 44 7-14 6-28-6-38z"/>
+          <g class="trunk">
+            <path class="trunk-edge" d="M180 200v76"/>
+            <path class="trunk-path" d="M180 200v76"/>
+            <path class="ridge" d="M166 226q14 6 28 0M166 244q14 6 28 0M166 262q14 6 28 0"/>
+          </g>
+          <g class="eye"><circle class="ink" cx="146" cy="174" r="10"/><circle class="white" cx="149" cy="171" r="3.4"/></g>
+          <g class="eye"><circle class="ink" cx="214" cy="174" r="10"/><circle class="white" cx="217" cy="171" r="3.4"/></g>
+          <circle class="cheek" cx="118" cy="210" r="14"/><circle class="cheek" cx="242" cy="210" r="14"/>
+          <g class="crown">
+            <path class="gold" d="M132 106L124 54 156 78 180 42 204 78 236 54 228 106Z" stroke-linejoin="round"/>
+            <rect class="gold-d" x="128" y="100" width="104" height="16" rx="6"/>
+            <circle class="ball" cx="124" cy="52" r="5"/><circle class="ball" cx="236" cy="52" r="5"/>
+            <circle class="gem red" cx="180" cy="54" r="6"/>
+            <circle class="gem blue" cx="154" cy="108" r="4"/><circle class="gem pink2" cx="180" cy="108" r="4"/><circle class="gem blue" cx="206" cy="108" r="4"/>
+          </g>
+        </g></g>
+      </svg>
+    </div>
 
     <section aria-label="Password generator">
       <div class="out">
@@ -41,7 +76,7 @@
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg>
           </button>
         </div>
-        <button class="copy" id="copy" type="button">Copy</button>
+        <span class="copy-wrap"><button class="copy" id="copy" type="button">Copy</button><span class="copied" id="copied" role="status" aria-live="polite"></span></span>
       </div>
       <div class="meter" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
       <div class="info" id="info" aria-live="polite"></div>
@@ -65,11 +100,52 @@
         </div>
       </div>
       <label class="extra"><input type="checkbox" id="amb"> Avoid look-alike characters (I, l, 1, O, 0)</label>
+      <p class="share-hint">Need to send it to someone? <a href="https://share.adandez.com" target="_blank" rel="noopener">Share it securely</a></p>
     </section>
   </div>
 
   <div class="privacy"><strong>Private by design.</strong> Passwords are generated on your device with your browser's cryptographic random number generator. Nothing is stored, logged, or transmitted, and a new password is created each time you press the refresh button. Clearing the page erases it.</div>
 </main>
+<div class="wave" aria-hidden="true"><svg viewBox="0 0 1440 64" preserveAspectRatio="none"><path d="M0 34C220 76 430 4 720 32s520 40 720-14V64H0Z"/></svg></div>
+<footer class="site-footer">
+  <div class="foot-grid">
+    <div class="foot-brand">
+      <a class="logo" href="/" aria-label="Adandez home">
+        <span class="logo-mark" aria-hidden="true">A</span><span>Adandez</span>
+      </a>
+      <p>Free online tools, hosting and everyday services from Adandez.</p>
+    </div>
+    <nav aria-label="Explore">
+      <h2>Explore</h2>
+      <ul>
+        <li><a href="https://tke.co.ke" target="_blank" rel="noopener">IT Services</a></li>
+        <li><a href="https://futbolbench.co.ke" target="_blank" rel="noopener">Football News</a></li>
+        <li><a href="https://anywhere.co.ke" target="_blank" rel="noopener">Adventure Insights</a></li>
+        <li><a href="https://tailsandtreats.co.ke" target="_blank" rel="noopener">Pet food</a></li>
+        <li><a href="https://beadwork.co.ke" target="_blank" rel="noopener">Beadwork</a></li>
+      </ul>
+    </nav>
+    <nav aria-label="Tools">
+      <h2>Tools</h2>
+      <ul>
+        <li><a class="here" href="./">Password generator</a></li>
+        <li><a href="https://share.adandez.com" target="_blank" rel="noopener">Secure Share</a></li>
+      </ul>
+    </nav>
+    <nav aria-label="Hosting and servers">
+      <h2>Hosting &amp; servers</h2>
+      <ul>
+        <li><a href="https://billing.adandez.com/" target="_blank" rel="noopener">Domain &amp; hosting</a></li>
+        <li><a href="https://truehost.com/cloud/aff.php?aff=130" target="_blank" rel="sponsored noopener">Cheap VPS</a></li>
+        <li><a href="https://my.hostafrica.com/aff.php?aff=3104" target="_blank" rel="sponsored noopener">Dedicated Server</a></li>
+      </ul>
+    </nav>
+  </div>
+  <div class="foot-bar">
+    <p>&copy; <span id="year"></span> Adandez Services. All rights reserved.</p>
+    <p class="disclosure">Some links are affiliate links. We may earn a commission at no extra cost to you.</p>
+  </div>
+</footer>
 <div class="toast" id="toast" role="status"></div>
 
 <script src="app.js" defer></script>

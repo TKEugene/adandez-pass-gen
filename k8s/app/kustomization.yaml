@@ -9,5 +9,5 @@ resources:
 # CI rewrites newName/newTag on every deploy. Keep these two lines in this exact format.
 images:
   - name: adandez-pass-gen
-    newName: tkeugene/adandez-pass-gen
+    newName: DOCKERHUB_USERNAME/adandez-pass-gen
     newTag: latest

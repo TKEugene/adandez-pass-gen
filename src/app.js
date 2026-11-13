@@ -65,11 +65,26 @@
     const el = $("toast"); el.textContent = msg; el.classList.add("on");
     clearTimeout(t); t = setTimeout(() => el.classList.remove("on"), 1800);
   }
+  const copiedEl = $("copied"), ele = $("elephant");
+  let copiedTimer;
+  function showCopied(msg) {
+    copiedEl.textContent = msg;
+    copiedEl.classList.add("show");
+    clearTimeout(copiedTimer);
+    copiedTimer = setTimeout(() => {
+      copiedEl.classList.remove("show");
+      copiedTimer = setTimeout(() => { copiedEl.textContent = ""; }, 250);
+    }, 1400);
+  }
   async function copy() {
     const v = pw.value;
-    try { await navigator.clipboard.writeText(v); }
-    catch { pw.select(); document.execCommand("copy"); pw.setSelectionRange(0, 0); }
-    toast("Password copied");
+    let ok = false;
+    try { await navigator.clipboard.writeText(v); ok = true; }
+    catch {
+      try { pw.select(); ok = document.execCommand("copy"); pw.setSelectionRange(0, 0); } catch { ok = false; }
+    }
+    showCopied(ok ? "Copied" : "Couldn\u2019t copy");
+    if (ok) { ele.classList.remove("cheer"); void ele.getBoundingClientRect(); ele.classList.add("cheer"); setTimeout(() => ele.classList.remove("cheer"), 700); }
   }
   function setLen(v) { len.value = Math.min(64, Math.max(8, v)); render(); }
 
@@ -85,6 +100,17 @@
   $("shuffle").addEventListener("click", e => {
     const b = e.currentTarget; b.classList.remove("spin"); void b.offsetWidth; b.classList.add("spin"); render();
   });
+
+  // Footer year updates itself every year, nothing to edit
+  const yr = $("year");
+  if (yr) yr.textContent = new Date().getFullYear();
+
+  // Mobile menu
+  const menuBtn = $("menu-btn"), nav = $("site-nav");
+  function setMenu(open) { nav.classList.toggle("open", open); menuBtn.setAttribute("aria-expanded", String(open)); }
+  menuBtn.addEventListener("click", () => setMenu(menuBtn.getAttribute("aria-expanded") !== "true"));
+  document.addEventListener("keydown", e => { if (e.key === "Escape") setMenu(false); });
+  document.addEventListener("click", e => { if (!nav.contains(e.target) && !menuBtn.contains(e.target)) setMenu(false); });
 
   if (!window.crypto || !crypto.getRandomValues) {
     pw.value = "Unsupported browser";

@@ -4,7 +4,7 @@ FROM nginxinc/nginx-unprivileged:stable-alpine
 
 LABEL org.opencontainers.image.title="adandez-pass-gen" \
       org.opencontainers.image.description="Client-side random password generator" \
-      org.opencontainers.image.source="https://github.com/tkeugene/adandez-pass-gen"
+      org.opencontainers.image.source="https://github.com/YOUR_GITHUB_USERNAME/adandez-pass-gen"
 
 COPY nginx/default.conf /etc/nginx/conf.d/default.conf
 COPY src/ /usr/share/nginx/html/random-pass-gen/

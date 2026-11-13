@@ -80,6 +80,20 @@ kubectl -n adandez-pass-gen get secret github-deployer-token -o jsonpath='{.data
 > ```
 > If that times out, port 6443 is firewalled. Open it for GitHub's runners, or use the pull-based option under "Private cluster?" below.
 
+Test the token **before** putting it in GitHub (it must print a list of pods or `\"items\": []`, not `Unauthorized`):
+
+```bash
+TOKEN=$(kubectl -n adandez-pass-gen get secret github-deployer-token -o jsonpath='{.data.token}' | base64 -d)
+echo "${TOKEN:0:3}"        # must print: eyJ
+curl -sk -H "Authorization: Bearer $TOKEN" \
+  https://156.67.31.71:6443/api/v1/namespaces/adandez-pass-gen/pods | head -5
+```
+
+`Unauthorized` means a bad token or the wrong cluster. `Forbidden` means the token works but `deployer-rbac.yaml` wasn't applied. If `echo` prints nothing, the cluster hasn't filled in the token: delete the secret (`kubectl -n adandez-pass-gen delete secret github-deployer-token`) and apply `deployer-rbac.yaml` again.
+
+Tip: with the GitHub CLI you can skip copy and paste entirely:
+`kubectl -n adandez-pass-gen get secret github-deployer-token -o jsonpath='{.data.token}' | base64 -d | gh secret set KUBE_TOKEN`
+
 ## 4. Add the GitHub secrets
 
 Repo → **Settings → Secrets and variables → Actions → New repository secret**. Add all five:
@@ -97,11 +111,12 @@ Optional but recommended: **Settings → Environments → New environment** call
 ## 5. Personalise the repo files
 
 1. `Dockerfile`: replace `YOUR_GITHUB_USERNAME` in the `source` label.
-2. **Logo**: copy your logo into `src/` (for example `src/logo.svg`). In `src/index.html`, replace
+2. **Logo**: copy your logo into `src/` (for example `src/logo.svg`). In `src/index.html`, replace the logo block in **both** the header and the footer:
    `<span class="logo-mark" aria-hidden="true">A</span><span>Adandez</span>`
    with
    `<img src="logo.svg" alt="Adandez">`
-3. `k8s/app/ingress.yaml`: see step 8 about the TLS block.
+   (the footer logo sits on a dark background, so use a logo that reads well on both, or a white version for the footer).
+3. `k8s/app/ingress.yaml`: nothing to change for adandez.com (see step 9).
 
 ## 6. Test locally (optional, needs Docker)
 
@@ -117,18 +132,70 @@ docker run --rm -p 8080:8080 --read-only --tmpfs /tmp adandez-pass-gen
 git init -b main
 git add .
 git commit -m "Initial commit"
-git remote add origin git@github.com:tkeugene/adandez-pass-gen.git
+git remote add origin git@github.com:YOUR_GITHUB_USERNAME/adandez-pass-gen.git
 git push -u origin main
 ```
 
-Watch it under the repo's **Actions** tab. The first run builds, tests, pushes `…/adandez-pass-gen:sha-xxxxxxx` to Docker Hub, then deploys. Check the cluster:
+Watch it under the repo's **Actions** tab. The first run builds, tests, pushes `…/adandez-pass-gen:sha-xxxxxxx` to Docker Hub, then deploys the manifests (explained in step 8). Check the cluster:
 
 ```bash
 kubectl -n adandez-pass-gen get deploy,pods,svc,ingress
 kubectl -n adandez-pass-gen rollout status deployment/adandez-pass-gen
 ```
 
-## 8. Ingress, DNS and HTTPS (already handled for adandez.com)
+## 8. Deploying the manifests
+
+Which manifest gets applied by whom:
+
+| File | Creates | Applied by |
+|---|---|---|
+| `k8s/bootstrap/namespace.yaml` | the `adandez-pass-gen` namespace | **you**, once (step 3) |
+| `k8s/bootstrap/deployer-rbac.yaml` | the limited GitHub deploy account and its token | **you**, once (step 3) |
+| `k8s/app/deployment.yaml` | the app: 2 pods, rolling updates, health checks, locked-down security settings | **the pipeline**, every push |
+| `k8s/app/service.yaml` | internal Service that the ingress sends traffic to | **the pipeline**, every push |
+| `k8s/app/ingress.yaml` | the `/random-pass-gen` route on adandez.com and www | **the pipeline**, every push |
+| `k8s/app/pdb.yaml` | keeps at least 1 pod up during node maintenance | **the pipeline**, every push |
+| `k8s/app/kustomization.yaml` | ties the four files above together and sets the exact image tag | **the pipeline** (it rewrites the tag) |
+| `k8s/optional/networkpolicy.yaml` | extra network lockdown | **you**, only if you want it |
+
+### Automatic (normal path)
+
+You never run `kubectl apply` for the app yourself. After the image is pushed, the pipeline's **Deploy to Kubernetes** job does this:
+
+1. Connects to the cluster with the `github-deployer` token.
+2. Writes the new image tag (`sha-xxxxxxx`) into `k8s/app/kustomization.yaml`.
+3. Runs `kubectl apply -k k8s/app`, which creates (first run) or updates (later runs) the Deployment, Service, Ingress and PodDisruptionBudget.
+4. Waits for the rollout (`kubectl rollout status`) and rolls back if it fails.
+
+Confirm after the first run:
+
+```bash
+kubectl -n adandez-pass-gen get deploy,pods,svc,ingress,pdb
+```
+
+### Manual (first deploy by hand, or if GitHub cannot reach your cluster)
+
+The image must already be on Docker Hub. The pipeline's build job pushes it even when the deploy job fails, and the tag is printed in the Actions log (for example `sha-3f9a1c2`). Then, from the repo folder on your computer:
+
+```bash
+# 1. Point the manifests at that image: edit newName and newTag in k8s/app/kustomization.yaml
+#      newName: YOUR_DOCKERHUB_USERNAME/adandez-pass-gen
+#      newTag:  sha-3f9a1c2
+
+# 2. Preview what will be created (nothing is changed yet)
+kubectl kustomize k8s/app
+
+# 3. Deploy
+kubectl apply -k k8s/app
+
+# 4. Watch it come up
+kubectl -n adandez-pass-gen rollout status deployment/adandez-pass-gen
+kubectl -n adandez-pass-gen get deploy,pods,svc,ingress,pdb
+```
+
+Later pushes overwrite those two lines automatically, so there is no need to commit your edit.
+
+## 9. Ingress, DNS and HTTPS (already handled for adandez.com)
 
 `k8s/app/ingress.yaml` adds `/random-pass-gen` on `adandez.com` and `www.adandez.com`, alongside the existing WordPress (`/`), `/kb` and `/ssl` ingresses. ingress-nginx always picks the longest matching path, so this one wins over WordPress's `/`.
 
@@ -136,7 +203,7 @@ kubectl -n adandez-pass-gen rollout status deployment/adandez-pass-gen
 - **Certificate: nothing to do.** The existing `adandez-tls` secret in the `adandez` namespace is already served for this host. The new ingress intentionally has no `tls:` block, so there is no second certificate and no conflict. `force-ssl-redirect` makes plain `http://` URLs redirect to HTTPS.
 - **Why a separate namespace?** The deploy account in `k8s/bootstrap/` can only touch the `adandez-pass-gen` namespace. Putting the app in `adandez` would let GitHub modify your WordPress and `/kb` resources.
 
-## 9. Verify
+## 10. Verify
 
 ```bash
 curl -I https://adandez.com/random-pass-gen/      # 200 + security headers
@@ -146,6 +213,20 @@ curl -I https://adandez.com/random-pass-gen       # 301 -> /random-pass-gen/
 Then open the page, press Copy, and paste somewhere to confirm.
 
 ---
+
+## Customising the page
+
+| I want to change | Edit |
+|---|---|
+| The elephant mascot | It is an inline SVG (`<svg class="elephant">`) inside `<div class="hero-wrap">` in `src/index.html`, animated by the `.elephant` rules at the bottom of `src/style.css`. To use your own picture instead, put it in `src/` and replace the whole `<svg class="elephant" ...>...</svg>` block with `<img class="elephant" src="hero.png" alt="Describe the image">`. |
+| Top menu links | `<nav class="nav" id="site-nav">` in `src/index.html` (one `<a>` per link). Seven links fit on one line from 1280px wide; narrower screens get the menu button automatically |
+| Footer links | the `<nav>` blocks inside `<footer>` in `src/index.html` |
+| The "Share it securely" hint under the options | `<p class="share-hint">` in `src/index.html` (delete the line to remove it) |
+| Footer year | nothing. It is filled in from the visitor's clock, so it changes every 1 January on its own |
+| Page background and colours | the variables at the very top of `src/style.css`: `--bg` is the page colour, `--glow` the soft top glow, `--brand` the button/accent colour, `--foot-bg` the footer. A second block right below holds the dark-mode versions |
+| The "Copied" bubble | text and timing are in `showCopied()` in `src/app.js`; look in `style.css` under `.copied` |
+
+External links open in a new tab. Affiliate links (Cheap VPS, Dedicated Server) carry `rel="sponsored"`, and the footer shows a short affiliate disclosure. The site sends only its origin (`https://adandez.com`, never the page path) to the sites you link to, so they can see visits coming from adandez.com in their analytics.
 
 ## Day to day: how updates work
 
@@ -165,6 +246,8 @@ Work through pull requests: they run the build and smoke test but never push or 
 | Symptom | Likely cause |
 |---|---|
 | `Error: Cannot perform an interactive login` in Actions | `DOCKERHUB_USERNAME` / `DOCKERHUB_TOKEN` missing or wrong |
+| `lookup … no such host`, or the URL in the error starts with `http://` | `KUBE_SERVER` is not `https://<node-ip>:6443`. It is missing `https://`, missing the port, or is a name that doesn't resolve publicly (Rancher URL, `kubernetes`, a local alias). Fix the secret, then **Re-run failed jobs** |
+| `Please enter Username:` then `error: EOF` | The server was reached but rejected `KUBE_TOKEN` (empty, still base64-encoded, or from a different cluster). Re-create it as in step 3 and check it with the curl test below |
 | `Unable to connect to the server` in deploy job | API server not reachable from GitHub, or wrong `KUBE_SERVER` |
 | `x509: certificate is valid for …, not <ip>` | The API server's certificate doesn't list that IP. Add it (`tls-san` in the K3s/RKE2 config, then restart) or use a hostname that is listed |
 | `forbidden` / `x509` errors | Wrong `KUBE_TOKEN` / `KUBE_CA_B64`, or you skipped `deployer-rbac.yaml` |

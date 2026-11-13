@@ -104,6 +104,10 @@ jobs:
             https://*:*) ;;
             *) echo "::error::KUBE_SERVER must look like https://<node-ip>:6443 (scheme and port included, not a Rancher URL or a bare hostname)"; exit 1 ;;
           esac
+          case "$KUBE_TOKEN" in
+            eyJ*) ;;
+            *) echo "::error::KUBE_TOKEN is empty or not a service-account token. It must start with eyJ (decode it with base64 -d, see README step 3)"; exit 1 ;;
+          esac
           printf '%s' "$KUBE_CA_B64" | tr -d '[:space:]' | base64 -d > "$RUNNER_TEMP/ca.crt"
           kubectl config set-cluster target --server="$KUBE_SERVER" \
             --certificate-authority="$RUNNER_TEMP/ca.crt" --embed-certs=true
@@ -114,8 +118,8 @@ jobs:
 
       - name: Check cluster access
         run: |
-          kubectl version
-          kubectl auth can-i patch deployments -n adandez-pass-gen
+          kubectl version </dev/null
+          kubectl auth can-i patch deployments -n adandez-pass-gen </dev/null
 
       - name: Point the manifests at the new image
         env:
