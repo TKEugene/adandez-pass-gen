@@ -6,15 +6,16 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self'; script-src 'self'; img-src 'self' data:; connect-src 'none'; form-action 'none'; base-uri 'none'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="description" content="Free random password generator. Create strong, unique passwords in your browser. Nothing is stored or sent.">
+<meta name="build" content="__BUILD_ID__">
 <meta name="theme-color" content="#fff6e6">
 <title>Free Random Password Generator | Adandez</title>
-<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="style.css?v=__BUILD_ID__">
 </head>
 <body>
 <header class="site-header">
   <div class="bar">
     <a class="logo" href="/" aria-label="Adandez home">
-      <img src="logo.svg" alt="Adandez">
+      <span class="logo-img" aria-hidden="true"></span><span class="logo-text">Adandez</span>
     </a>
     <button class="menu-btn" id="menu-btn" type="button" aria-expanded="false" aria-controls="site-nav" aria-label="Menu"><span></span><span></span><span></span></button>
     <nav class="nav" id="site-nav" aria-label="Adandez services">
@@ -111,7 +112,7 @@
   <div class="foot-grid">
     <div class="foot-brand">
       <a class="logo" href="/" aria-label="Adandez home">
-        <span class="logo-mark" aria-hidden="true">A</span><span>Adandez</span>
+        <span class="logo-img" aria-hidden="true"></span><span class="logo-text">Adandez</span>
       </a>
       <p>Free online tools, hosting and everyday services from Adandez.</p>
     </div>
@@ -148,6 +149,6 @@
 </footer>
 <div class="toast" id="toast" role="status"></div>
 
-<script src="app.js" defer></script>
+<script src="app.js?v=__BUILD_ID__" defer></script>
 </body>
 </html>

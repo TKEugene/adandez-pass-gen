@@ -111,11 +111,7 @@ Optional but recommended: **Settings → Environments → New environment** call
 ## 5. Personalise the repo files
 
 1. `Dockerfile`: replace `YOUR_GITHUB_USERNAME` in the `source` label.
-2. **Logo**: copy your logo into `src/` (for example `src/logo.svg`). In `src/index.html`, replace the logo block in **both** the header and the footer:
-   `<span class="logo-mark" aria-hidden="true">A</span><span>Adandez</span>`
-   with
-   `<img src="logo.svg" alt="Adandez">`
-   (the footer logo sits on a dark background, so use a logo that reads well on both, or a white version for the footer).
+2. **Logo**: put your logo file in `src/` and name it `logo.png`. Use a **square** image, at least 256 x 256 px. It is shown inside a round frame at the top-left of the header and, smaller, in the footer, both from this one file. For a different name or format (for example `logo.svg` or `logo.webp`), change the single line `--logo:url("logo.png");` at the top of `src/style.css`. If the file is missing or misnamed the page still works and shows an empty round frame.
 3. `k8s/app/ingress.yaml`: nothing to change for adandez.com (see step 9).
 
 ## 6. Test locally (optional, needs Docker)
@@ -219,6 +215,7 @@ Then open the page, press Copy, and paste somewhere to confirm.
 | I want to change | Edit |
 |---|---|
 | The elephant mascot | It is an inline SVG (`<svg class="elephant">`) inside `<div class="hero-wrap">` in `src/index.html`, animated by the `.elephant` rules at the bottom of `src/style.css`. To use your own picture instead, put it in `src/` and replace the whole `<svg class="elephant" ...>...</svg>` block with `<img class="elephant" src="hero.png" alt="Describe the image">`. |
+| Logo (header and footer) | `--logo:url("logo.png");` at the very top of `src/style.css`. Sizes are in the `.logo-img` rules at the bottom of that file (52px in the header, 40px in the footer). To remove the "Adandez" word beside the logo, delete the `<span class="logo-text">Adandez</span>` in `src/index.html` (header and/or footer) |
 | Top menu links | `<nav class="nav" id="site-nav">` in `src/index.html` (one `<a>` per link). Seven links fit on one line from 1280px wide; narrower screens get the menu button automatically |
 | Footer links | the `<nav>` blocks inside `<footer>` in `src/index.html` |
 | The "Share it securely" hint under the options | `<p class="share-hint">` in `src/index.html` (delete the line to remove it) |
@@ -238,7 +235,7 @@ Work through pull requests: they run the build and smoke test but never push or 
 - Best: `git revert <bad-commit>` and push (keeps Git as the source of truth).
 - Emergency: `kubectl -n adandez-pass-gen rollout undo deployment/adandez-pass-gen`
 
-**See what version is live**
+**See what version is live** (the page also carries the full commit id in `<meta name="build">`)
 `kubectl -n adandez-pass-gen get deploy adandez-pass-gen -o jsonpath='{.spec.template.spec.containers[0].image}'`
 
 ## Troubleshooting
@@ -252,6 +249,7 @@ Work through pull requests: they run the build and smoke test but never push or 
 | `x509: certificate is valid for …, not <ip>` | The API server's certificate doesn't list that IP. Add it (`tls-san` in the K3s/RKE2 config, then restart) or use a hostname that is listed |
 | `forbidden` / `x509` errors | Wrong `KUBE_TOKEN` / `KUBE_CA_B64`, or you skipped `deployer-rbac.yaml` |
 | Pods `ImagePullBackOff` | Docker Hub repo is private (see below), or the username/repo name is wrong |
+| Page looks unstyled, or old and new design are mixed | A stale copy of `style.css` is being served from somewhere (browser, service worker, CDN or WordPress cache plugin). Each build now stamps its id into the CSS/JS addresses, so a fresh deploy always loads fresh files. To check what is live: `curl -s https://adandez.com/random-pass-gen/ \| grep -E 'name="build"\|style.css'` (the build id should equal the commit you pushed). If it still looks wrong in one browser only, use Ctrl+Shift+R, or DevTools → Application → Storage → **Clear site data** |
 | Browser certificate warning on this path only | Check `kubectl -n adandez get ingress` still shows your existing `adandez-tls` ingresses; this app adds no certificate of its own |
 | 404 from the ingress controller | Host/path mismatch, or `ingressClassName` differs from your controller's class |
 | 502 / 503 | Pods not ready: `kubectl -n adandez-pass-gen describe pod` |

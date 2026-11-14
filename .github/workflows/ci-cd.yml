@@ -41,6 +41,7 @@ jobs:
           load: true
           push: false
           tags: adandez-pass-gen:ci
+          build-args: BUILD_ID=${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -55,6 +56,8 @@ jobs:
           curl -fsS http://localhost:8080/healthz
           curl -fsS -o /dev/null http://localhost:8080/random-pass-gen/
           curl -fsS http://localhost:8080/random-pass-gen/app.js | grep -q getRandomValues
+          curl -fsS http://localhost:8080/random-pass-gen/ | grep -q "style.css?v=${GITHUB_SHA}"
+          if curl -fsS http://localhost:8080/random-pass-gen/ | grep -q "__BUILD_ID__"; then echo "build id was not stamped"; exit 1; fi
           curl -fsSI http://localhost:8080/random-pass-gen/ | grep -qi '^content-security-policy:'
           test "$(curl -s -o /dev/null -w '%{http_code}' http://localhost:8080/random-pass-gen)" = 301
           test "$(curl -s -o /dev/null -w '%{http_code}' http://localhost:8080/random-pass-gen/missing)" = 404
@@ -77,6 +80,7 @@ jobs:
           tags: |
             ${{ env.IMAGE }}:${{ steps.vars.outputs.tag }}
             ${{ env.IMAGE }}:latest
+          build-args: BUILD_ID=${{ github.sha }}
           cache-from: type=gha
 
   deploy:
